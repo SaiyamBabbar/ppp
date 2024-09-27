@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Your File</h1>
+        <form id="uploadForm">
+            <input type="file" name="file" accept="image/*,audio/*,video/*,application/pdf" required>
+            <button type="submit">Upload</button>
+        </form>
+        <div id="message"></div>
+        <div id="preview" class="preview"></div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('uploadForm');
+        const messageDiv = document.getElementById('message');
+        const previewDiv = document.getElementById('preview');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            
+            // Clear previous message and preview
+            messageDiv.textContent = '';
+            previewDiv.innerHTML = '';
+
+            try {
+                const response = await fetch('http://localhost:4000/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                messageDiv.textContent = result.message;
+
+                // Create a preview based on file type
+                const fileType = formData.get('file').type;
+                if (fileType.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = result.url;
+                    img.alt = 'Uploaded Image';
+                    img.classList.add('preview-img');
+                    previewDiv.appendChild(img);
+                } else if (fileType.startsWith('video/')) {
+                    const video = document.createElement('video');
+                    video.src = result.url;
+                    video.controls = true;
+                    video.classList.add('preview-video');
+                    previewDiv.appendChild(video);
+                } else if (fileType.startsWith('audio/')) {
+                    const audio = document.createElement('audio');
+                    audio.src = result.url;
+                    audio.controls = true;
+                    previewDiv.appendChild(audio);
+                } else if (fileType === 'application/pdf') {
+                    const iframe = document.createElement('iframe');
+                    iframe.src = result.url;
+                    iframe.classList.add('preview-pdf');
+                    previewDiv.appendChild(iframe);
+                }
+
+            } catch (error) {
+                messageDiv.textContent = 'Error uploading file: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
